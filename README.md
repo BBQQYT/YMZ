@@ -34,7 +34,7 @@ sudo pacman -S alsa-lib pkgconf base-devel
 ### Сборка и установка
 
 ```bash
-git clone [https://github.com/your-username/ymz.git](https://github.com/your-username/ymz.git)
+git clone https://github.com/BBQQYT/ymz.git
 cd ymz
 cargo build --release
 
