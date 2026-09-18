@@ -35,34 +35,32 @@
   ```bash
   sudo pacman -S alsa-lib pkgconf base-devel
 
-```
+  ```
 
-* **Ubuntu / Debian / Linux Mint / Pop!_OS:**
-```bash
-sudo apt install libasound2-dev pkg-config build-essential
-
-```
+  * **Ubuntu / Debian / Linux Mint / Pop!_OS:**
+  ```bash
+  sudo apt install libasound2-dev pkg-config build-essential
+  ```
 
 
 * **Fedora / RHEL / AlmaLinux:**
-```bash
-sudo dnf install alsa-lib-devel pkgconf-pkg-config gcc
-
-```
+  ```bash
+  sudo dnf install alsa-lib-devel pkgconf-pkg-config gcc
+  ```
 
 
 * **openSUSE (Tumbleweed / Leap):**
-```bash
-sudo zypper install alsa-devel pkg-config gcc
+  ```bash
+  sudo zypper install alsa-devel pkg-config gcc
 
-```
+  ```
 
 
 * **Void Linux:**
-```bash
-sudo xbps-install -S alsa-lib-devel base-devel
+  ```bash
+  sudo xbps-install -S alsa-lib-devel base-devel
 
-```
+  ```
 
 
 
@@ -71,30 +69,28 @@ sudo xbps-install -S alsa-lib-devel base-devel
 ### Сборка и установка
 
 1. **Клонирование репозитория:**
-```bash
-git clone https://github.com/BBQQYT/YMZ.git
-cd YMZ
+  ```bash
+  git clone https://github.com/BBQQYT/YMZ.git
+  cd YMZ
 
-```
+  ```
 
 
 2. **Компиляция релизного бинарника:**
-```bash
-<<<<<<< HEAD
-git clone https://github.com/BBQQYT/ymz.git
-cd ymz
-=======
->>>>>>> a3af482 (docs: обновление readme (инструкции под дистрибутивы, mpris timeline))
-cargo build --release
+  ```bash
 
-```
+  git clone https://github.com/BBQQYT/ymz.git
+  cd ymz
+  cargo build --release
+
+  ```
 
 
 3. **(Опционально) Установка в систему:**
-```bash
-sudo install -Dm755 target/release/ymz /usr/local/bin/ymz
+  ```bash
+  sudo install -Dm755 target/release/ymz /usr/local/bin/ymz
 
-```
+  ```
 
 
 
