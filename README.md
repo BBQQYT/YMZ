@@ -75,7 +75,7 @@ sudo xbps-install -S alsa-lib-devel base-devel
 
 1. **Клонирование репозитория:**
 ```bash
-git clone [https://github.com/BBQQYT/YMZ.git](https://github.com/BBQQYT/YMZ.git)
+git clone https://github.com/BBQQYT/YMZ.git
 cd YMZ
 
 ```

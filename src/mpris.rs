@@ -10,6 +10,8 @@ pub enum PlayerCommand {
     PlayPause,
     Next,
     Stop,
+    Seek(i64),        // относительное смещение в микросекундах
+    SetPosition(i64), // абсолютная позиция в микросекундах
 }
 
 pub struct MprisRoot;
@@ -42,6 +44,7 @@ pub struct MprisPlayer {
     pub current_artist: Arc<RwLock<String>>,
     pub current_art_url: Arc<RwLock<String>>,
     pub current_track_id: Arc<RwLock<String>>,
+    pub current_duration_us: Arc<RwLock<i64>>,
 }
 
 #[interface(name = "org.mpris.MediaPlayer2.Player")]
@@ -66,6 +69,16 @@ impl MprisPlayer {
         let _ = self.cmd_tx.send(PlayerCommand::Stop);
     }
 
+    // Перемотка на offset микросекунд относительно текущей позиции
+    async fn seek(&self, offset: i64) {
+        let _ = self.cmd_tx.send(PlayerCommand::Seek(offset));
+    }
+
+    // Установка ползунка в конкретную точку
+    async fn set_position(&self, _track_id: ObjectPath<'_>, position: i64) {
+        let _ = self.cmd_tx.send(PlayerCommand::SetPosition(position));
+    }
+
     #[zbus(property)]
     fn playback_status(&self) -> &str {
         if self.sink.is_paused() {
@@ -75,6 +88,12 @@ impl MprisPlayer {
         } else {
             "Playing"
         }
+    }
+
+    // Текущая позиция в микросекундах для виджета
+    #[zbus(property)]
+    fn position(&self) -> i64 {
+        self.sink.get_pos().as_micros() as i64
     }
 
     #[zbus(property)]
@@ -90,6 +109,9 @@ impl MprisPlayer {
     fn can_pause(&self) -> bool { true }
 
     #[zbus(property)]
+    fn can_seek(&self) -> bool { true }
+
+    #[zbus(property)]
     fn can_control(&self) -> bool { true }
 
     #[zbus(property)]
@@ -98,8 +120,9 @@ impl MprisPlayer {
         let artist = self.current_artist.read().await;
         let art = self.current_art_url.read().await;
         let tid = self.current_track_id.read().await;
+        let duration = *self.current_duration_us.read().await;
 
-        build_metadata_map(&title, &artist, &art, &tid)
+        build_metadata_map(&title, &artist, &art, &tid, duration)
     }
 }
 
@@ -108,6 +131,7 @@ pub fn build_metadata_map(
     artist: &str,
     art_url: &str,
     track_id: &str,
+    duration_us: i64,
 ) -> HashMap<String, Value<'static>> {
     let mut m = HashMap::new();
     let sanitized_id: String = track_id.chars().filter(|c| c.is_alphanumeric() || *c == '_').collect();
@@ -123,6 +147,11 @@ pub fn build_metadata_map(
     m.insert("mpris:trackid".to_string(), Value::from(track_path));
     m.insert("xesam:title".to_string(), Value::from(title.to_string()));
     m.insert("xesam:artist".to_string(), Value::from(vec![artist.to_string()]));
+
+    if duration_us > 0 {
+        m.insert("mpris:length".to_string(), Value::from(duration_us));
+    }
+
     if !art_url.is_empty() {
         m.insert("mpris:artUrl".to_string(), Value::from(art_url.to_string()));
     }
@@ -138,6 +167,18 @@ pub async fn notify_changed(conn: &Connection, changed: HashMap<&str, Value<'_>>
             "org.freedesktop.DBus.Properties",
             "PropertiesChanged",
             &("org.mpris.MediaPlayer2.Player", changed, invalidated),
+        )
+        .await;
+}
+
+pub async fn notify_seeked(conn: &Connection, position_us: i64) {
+    let _ = conn
+        .emit_signal(
+            Option::<&str>::None,
+            "/org/mpris/MediaPlayer2",
+            "org.mpris.MediaPlayer2.Player",
+            "Seeked",
+            &(position_us,),
         )
         .await;
 }

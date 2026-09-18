@@ -30,6 +30,8 @@ pub struct Track {
     pub artists: Vec<Artist>,
     #[serde(rename = "coverUri")]
     pub cover_uri: Option<String>,
+    #[serde(rename = "durationMs")]
+    pub duration_ms: Option<i64>,
 }
 
 #[derive(Deserialize, Debug, Clone)]

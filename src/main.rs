@@ -3,7 +3,8 @@ mod config;
 mod mpris;
 
 use api::YandexClient;
-use crate::mpris::{build_metadata_map, notify_changed, MprisPlayer, MprisRoot, PlayerCommand};use rodio::{Decoder, OutputStream, Sink};
+use crate::mpris::{build_metadata_map, notify_changed, notify_seeked, MprisPlayer, MprisRoot, PlayerCommand};
+use rodio::{Decoder, OutputStream, Sink};
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -30,6 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let current_artist = Arc::new(RwLock::new("Яндекс Музыка".to_string()));
     let current_art_url = Arc::new(RwLock::new("".to_string()));
     let current_track_id = Arc::new(RwLock::new("0".to_string()));
+    let current_duration_us = Arc::new(RwLock::new(0i64));
 
     let mpris_player = MprisPlayer {
         cmd_tx: cmd_tx.clone(),
@@ -38,6 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         current_artist: current_artist.clone(),
         current_art_url: current_art_url.clone(),
         current_track_id: current_track_id.clone(),
+        current_duration_us: current_duration_us.clone(),
     };
 
     let conn = Builder::session()?
@@ -51,10 +54,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let skip_flag = Arc::new(AtomicBool::new(false));
 
-    // Фоновая обработка команд управления
     let sink_ctrl = sink.clone();
     let skip_ctrl = skip_flag.clone();
     let conn_ctrl = conn.clone();
+    let duration_ctrl = current_duration_us.clone();
 
     tokio::spawn(async move {
         while let Some(cmd) = cmd_rx.recv().await {
@@ -81,11 +84,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     changed.insert("PlaybackStatus", Value::from("Stopped"));
                     notify_changed(&conn_ctrl, changed).await;
                 }
+                PlayerCommand::Seek(offset_us) => {
+                    let cur = sink_ctrl.get_pos().as_micros() as i64;
+                    let total = *duration_ctrl.read().await;
+                    let target = (cur + offset_us).clamp(0, total);
+                    if sink_ctrl.try_seek(Duration::from_micros(target as u64)).is_ok() {
+                        notify_seeked(&conn_ctrl, target).await;
+                    }
+                }
+                PlayerCommand::SetPosition(pos_us) => {
+                    let total = *duration_ctrl.read().await;
+                    let target = pos_us.clamp(0, total);
+                    if sink_ctrl.try_seek(Duration::from_micros(target as u64)).is_ok() {
+                        notify_seeked(&conn_ctrl, target).await;
+                    }
+                }
             }
         }
     });
 
-    // Обработка SIGTERM / SIGINT для чистого завершения
     let mut sigterm = signal(SignalKind::terminate())?;
     let mut sigint = signal(SignalKind::interrupt())?;
 
@@ -119,12 +136,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map(|uri| format!("https://{}", uri.replace("%%", "400x400")))
                 .unwrap_or_default();
 
+            let duration_us = track.duration_ms.unwrap_or(0) * 1000;
+
             *current_title.write().await = track.title.clone();
             *current_artist.write().await = artist_name.clone();
             *current_track_id.write().await = track.id.clone();
             *current_art_url.write().await = cover_url.clone();
+            *current_duration_us.write().await = duration_us;
 
-            let meta = build_metadata_map(&track.title, &artist_name, &cover_url, &track.id);
+            let meta = build_metadata_map(&track.title, &artist_name, &cover_url, &track.id, duration_us);
             let mut changed = HashMap::new();
             changed.insert("Metadata", Value::from(meta));
             changed.insert("PlaybackStatus", Value::from("Playing"));
@@ -142,10 +162,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             ym.send_feedback(&station.batch_id, &track.id, "trackStarted").await;
 
-            // Загрузка аудио и воспроизведение
             if let Ok(resp) = reqwest::get(&stream_url).await {
                 if let Ok(bytes) = resp.bytes().await {
-                    // Decoder забирает Cursor<Bytes>. После завершения трека память освобождается сразу.
                     if let Ok(source) = Decoder::new(Cursor::new(bytes)) {
                         skip_flag.store(false, Ordering::SeqCst);
                         sink.append(source);
