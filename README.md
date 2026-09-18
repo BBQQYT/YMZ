@@ -117,4 +117,3 @@ playerctl -p ymz metadata
 
 MIT
 
-```
