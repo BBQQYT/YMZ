@@ -2,58 +2,127 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Rust-dea584?style=for-the-badge&logo=rust" alt="Rust" />
-  <img src="https://img.shields.io/badge/Platform-Arch_Linux-1793d1?style=for-the-badge&logo=arch-linux" alt="Arch Linux" />
+  <img src="https://img.shields.io/badge/Platform-Linux-1793d1?style=for-the-badge&logo=linux" alt="Linux" />
   <img src="https://img.shields.io/badge/Memory-~18MB_RSS-brightgreen?style=for-the-badge" alt="RAM" />
   <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License" />
 </p>
 
+<<<<<<< HEAD
 Ультралегковесный headless-клиент для **Яндекс Музыки**, написанный на Rust. Играет исключительно поток **«Моя волна»**, не тащит за собой Electron/Chromium, нативно интегрируется в окружение через **MPRIS v2** и управляется стандартными средствами системы (`playerctl`, Waybar, виджеты панелей, медиаклавиши).
 Признаюсь, был написан ии за пару минут, но контролировался человеком.
+=======
+Ультралегковесный headless-клиент для **Яндекс Музыки**, написанный на Rust. Играет исключительно поток **«Моя волна»**, не тащит Electron/Chromium, нативно интегрируется в окружение через **MPRIS v2** и управляется стандартными системными средствами (`playerctl`, виджеты панелей, медиаклавиши).
+>>>>>>> a3af482 (docs: обновление readme (инструкции под дистрибутивы, mpris timeline))
 
 ---
 
 ### Особенности
 
-* **Zero-bloat:** потребление памяти в пределах **15–25 МБ RAM** (против ~700 МБ у официального клиента).
-* **Нативный MPRIS v2:** полная поддержка D-Bus сигналов `PropertiesChanged` — название, исполнитель и обложка трека отображаются в системных панелях в реальном времени.
-* **Честная «Моя волна»:** отправка сетевого фидбека (`trackStarted`, `trackFinished`, `skip`) на серверы Яндекса для корректной работы алгоритмов рекомендаций.
-* **Нативный звук:** стриминг и декодирование аудио через `rodio` / `symphonia` напрямую в PipeWire/ALSA.
+* **Zero-bloat:** потребление памяти в пределах **15–20 МБ RSS** (против ~700 МБ у десктопного веб-клиента).
+* **Полноценный MPRIS v2:**
+  * Название, артист и обложка трека в реальном времени.
+  * Синхронизация времени: отображение длительности (`mpris:length`) и шкалы воспроизведения (`Position`).
+  * Полная поддержка перемотки по клику на ползунок (`Seek`, `SetPosition`).
+* **Безопасность:** изолированное хранение OAuth-токена в `~/.config/ymz/token` с правами доступа `600` (токен не светится в процессах и логах).
+* **Сетевая устойчивость:** автоматический retry с экспоненциальной задержкой при сбоях сети или кратковременных обрывах связи.
+* **Честный ротор:** корректная отправка сетевого фидбека (`trackStarted`, `trackFinished`, `skip`) в алгоритмы Яндекса.
+* **Универсальность:** работает с PipeWire, PulseAudio и чистой ALSA на любых дистрибутивах Linux.
 
 ---
 
-### Зависимости
+### Системные зависимости
 
-На Arch Linux:
+Для сборки требуются заголовочные файлы ALSA и `pkg-config`:
 
-```bash
-sudo pacman -S alsa-lib pkgconf base-devel
+* **Arch Linux / Manjaro / CachyOS:**
+  ```bash
+  sudo pacman -S alsa-lib pkgconf base-devel
 
 ```
+
+* **Ubuntu / Debian / Linux Mint / Pop!_OS:**
+```bash
+sudo apt install libasound2-dev pkg-config build-essential
+
+```
+
+
+* **Fedora / RHEL / AlmaLinux:**
+```bash
+sudo dnf install alsa-lib-devel pkgconf-pkg-config gcc
+
+```
+
+
+* **openSUSE (Tumbleweed / Leap):**
+```bash
+sudo zypper install alsa-devel pkg-config gcc
+
+```
+
+
+* **Void Linux:**
+```bash
+sudo xbps-install -S alsa-lib-devel base-devel
+
+```
+
+
 
 ---
 
 ### Сборка и установка
 
+1. **Клонирование репозитория:**
 ```bash
+git clone [https://github.com/BBQQYT/YMZ.git](https://github.com/BBQQYT/YMZ.git)
+cd YMZ
+
+```
+
+
+2. **Компиляция релизного бинарника:**
+```bash
+<<<<<<< HEAD
 git clone https://github.com/BBQQYT/ymz.git
 cd ymz
+=======
+>>>>>>> a3af482 (docs: обновление readme (инструкции под дистрибутивы, mpris timeline))
 cargo build --release
 
 ```
 
-Бинарник с оптимизацией по размеру появится в `./target/release/ymz`.
+
+3. **(Опционально) Установка в систему:**
+```bash
+sudo install -Dm755 target/release/ymz /usr/local/bin/ymz
+
+```
+
+
 
 ---
 
-### Настройка и запуск
+### Настройка
 
-#### 1. Получение токена
+Сохраните OAuth-токен Яндекс Музыки в конфигурационный файл и ограничьте права доступа:
 
-Для работы плеера требуется OAuth-токен аккаунта Яндекс Музыки (`YM_TOKEN`).
+```bash
+mkdir -p ~/.config/ymz
+echo "ВАШ_ТОКЕН" > ~/.config/ymz/token
+chmod 600 ~/.config/ymz/token
 
-#### 2. Запуск через systemd (user service)
+```
 
-Создайте юнит `~/.config/systemd/user/ymz.service`:
+> Также поддерживается передача токена через переменную окружения `YM_TOKEN`.
+
+---
+
+### Автозапуск
+
+#### Вариант 1: systemd user service (рекомендуется)
+
+Создайте файл `~/.config/systemd/user/ymz.service`:
 
 ```ini
 [Unit]
@@ -62,17 +131,16 @@ After=pipewire.service wireplumber.service sound.target
 
 [Service]
 Type=simple
-ExecStart=%h/ymz/target/release/ymz
-Environment=YM_TOKEN=y0_AgAAAA...ВАШ_ТОКЕН...
+ExecStart=/usr/local/bin/ymz
 Restart=always
-RestartSec=5
+RestartSec=3
 
 [Install]
 WantedBy=default.target
 
 ```
 
-Запуск и активация:
+Активация и запуск:
 
 ```bash
 systemctl --user daemon-reload
@@ -80,31 +148,63 @@ systemctl --user enable --now ymz.service
 
 ```
 
+#### Вариант 2: Запуск без systemd (Hyprland / Sway / AwesomeWM / i3)
+
+Просто добавьте вызов бинарника в конфиг оконного менеджера:
+
+* **Hyprland** (`hyprland.conf`):
+```ini
+exec-once = ymz
+
+```
+
+
+* **Sway** (`config`):
+```ini
+exec ymz
+
+```
+
+
+* **AwesomeWM** (`rc.lua`):
+```lua
+awful.spawn.with_shell("ymz")
+
+```
+
+
+
 ---
 
 ### Управление
 
-Управление воспроизведением через терминал или бинды тайловых WM (`hyprland.conf`, `rc.lua`, `i3/config`):
-
 ```bash
-# Пауза / Плей
+# Плей / Пауза
 playerctl -p ymz play-pause
 
-# Следующий трек (с отправкой skip-фидбека)
+# Следующий трек (с отправкой skip-статистики)
 playerctl -p ymz next
 
-# Текущий статус
+# Перемотка вперед/назад на 10 секунд
+playerctl -p ymz position 10+
+playerctl -p ymz position 10-
+
+# Перейти на конкретную секунду (например, 1:15)
+playerctl -p ymz position 75
+
+# Текущие метаданные и статус
 playerctl -p ymz metadata
 
 ```
 
-#### Waybar config:
+#### Интеграция с Waybar (`config.jsonc`):
 
 ```jsonc
 "mpris": {
     "player": "ymz",
-    "format": "{status_icon} {artist} — {title}",
-    "status-icons": {
+    "format": "{player_icon} {artist} — {title} [{position}/{length}]",
+    "player-icons": {
+        "default": "▶",
         "playing": "▶",
         "paused": "⏸"
     }
@@ -116,5 +216,6 @@ playerctl -p ymz metadata
 
 ### Лицензия
 
-MIT
+Проект распространяется под лицензией [MIT](https://www.google.com/search?q=LICENSE&utm_source=gemini).
+
 
