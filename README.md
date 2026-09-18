@@ -1,4 +1,4 @@
-# ymz (Yandex Music Zero)
+# YMZ (Yandex Music Zero)
 
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Rust-dea584?style=for-the-badge&logo=rust" alt="Rust" />
@@ -8,6 +8,8 @@
 </p>
 
 Ультралегковесный headless-клиент для **Яндекс Музыки**, написанный на Rust. Играет исключительно поток **«Моя волна»**, не тащит Electron/Chromium, нативно интегрируется в окружение через **MPRIS v2** и управляется стандартными системными средствами (`playerctl`, виджеты панелей, медиаклавиши).
+
+Да, написан ИИ, я этого не скрываю!
 
 ---
 
