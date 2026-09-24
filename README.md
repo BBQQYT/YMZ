@@ -1,123 +1,115 @@
 # YMZ (Yandex Music Zero)
 
 <p align="center">
+  <a href="README.md"><img src="https://img.shields.io/badge/Language-English-blue?style=for-the-badge" alt="English" /></a>
+  <a href="README_RU.md"><img src="https://img.shields.io/badge/Язык-Русский-lightgrey?style=for-the-badge" alt="Русский" /></a>
+</p>
+
+<p align="center">
+  [ <b>English</b> | <a href="README_RU.md">Русский</a> ]
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Language-Rust-dea584?style=for-the-badge&logo=rust" alt="Rust" />
   <img src="https://img.shields.io/badge/Platform-Linux-1793d1?style=for-the-badge&logo=linux" alt="Linux" />
-  <img src="https://img.shields.io/badge/Memory-~18MB_RSS-brightgreen?style=for-the-badge" alt="RAM" />
+  <img src="https://img.shields.io/badge/Memory-~15--20MB_RSS-brightgreen?style=for-the-badge" alt="RAM" />
   <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License" />
 </p>
 
-Ультралегковесный headless-клиент для **Яндекс Музыки**, написанный на Rust. Играет исключительно поток **«Моя волна»**, не тащит Electron/Chromium, нативно интегрируется в окружение через **MPRIS v2** и управляется стандартными системными средствами (`playerctl`, виджеты панелей, медиаклавиши). 
+---
 
-Да, написан ИИ, я этого не скрываю!
+An ultra-lightweight headless client for **Yandex Music**, written in Rust. It exclusively streams **"My Wave" ("Моя волна")**, avoids heavy Electron/Chromium dependencies, integrates natively via **MPRIS v2**, and is controlled using standard Linux system tools (`playerctl`, Waybar, desktop widgets, media keys).
 
-Есть так же аналог но для YouTube Music, [YouMZ!](https://github.com/BBQQYT/YouMZ)
+Yes, written by AI, not hiding it!
+
+There is also an equivalent for YouTube Music — [YouMZ!](https://github.com/BBQQYT/YouMZ)
 
 ---
 
-### Особенности
+### Features
 
-* **Zero-bloat:** потребление памяти в пределах **15–20 МБ RSS** (против ~700 МБ у десктопного веб-клиента).
-* **Полноценный MPRIS v2:**
-  * Название, артист и обложка трека в реальном времени.
-  * Синхронизация времени: отображение длительности (`mpris:length`) и шкалы воспроизведения (`Position`).
-  * Полная поддержка перемотки по клику на ползунок (`Seek`, `SetPosition`).
-* **Безопасность:** изолированное хранение OAuth-токена в `~/.config/ymz/token` с правами доступа `600` (токен не светится в процессах и логах).
-* **Сетевая устойчивость:** автоматический retry с экспоненциальной задержкой при сбоях сети или кратковременных обрывах связи.
-* **Честный ротор:** корректная отправка сетевого фидбека (`trackStarted`, `trackFinished`, `skip`) в алгоритмы Яндекса.
-* **Универсальность:** работает с PipeWire, PulseAudio и чистой ALSA на любых дистрибутивах Linux.
+* **Zero-bloat:** Memory consumption stays within **15–20 MB RSS** (compared to ~700 MB for the official desktop client).
+* **Full MPRIS v2 Support:**
+  * Real-time track title, artist name, and album artwork.
+  * Timeline synchronization: duration (`mpris:length`) and playback progress (`Position`).
+  * Full seeking and scrubbing support (`Seek`, `SetPosition`).
+* **Security:** Isolated OAuth token storage in `~/.config/ymz/token` with `600` permissions (the token is never exposed in process lists or logs).
+* **Network Resilience:** Automatic retries with exponential backoff on network errors or brief disconnections.
+* **Accurate Rotor Feedback:** Sends proper playback telemetry (`trackStarted`, `trackFinished`, `skip`) to Yandex recommendation algorithms.
+* **Universal Audio Backend:** Seamlessly works with PipeWire, PulseAudio, and pure ALSA across all Linux distributions.
 
 ---
 
-### Системные зависимости
+### System Dependencies
 
-Для сборки требуются заголовочные файлы ALSA и `pkg-config`:
+Building requires ALSA development headers and `pkg-config`:
 
 * **Arch Linux / Manjaro / CachyOS:**
   ```bash
   sudo pacman -S alsa-lib pkgconf base-devel
-
   ```
 
-  * **Ubuntu / Debian / Linux Mint / Pop!_OS:**
+* **Ubuntu / Debian / Linux Mint / Pop!_OS:**
   ```bash
   sudo apt install libasound2-dev pkg-config build-essential
   ```
-
 
 * **Fedora / RHEL / AlmaLinux:**
   ```bash
   sudo dnf install alsa-lib-devel pkgconf-pkg-config gcc
   ```
 
-
 * **openSUSE (Tumbleweed / Leap):**
   ```bash
   sudo zypper install alsa-devel pkg-config gcc
-
   ```
-
 
 * **Void Linux:**
   ```bash
   sudo xbps-install -S alsa-lib-devel base-devel
-
   ```
-
-
 
 ---
 
-### Сборка и установка
+### Building and Installation
 
-1. **Клонирование репозитория:**
-  ```bash
-  git clone https://github.com/BBQQYT/YMZ.git
-  cd YMZ
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/BBQQYT/ymz.git
+   cd ymz
+   ```
 
-  ```
+2. **Build the release binary:**
+   ```bash
+   cargo build --release
+   ```
 
-
-2. **Компиляция релизного бинарника:**
-  ```bash
-
-  git clone https://github.com/BBQQYT/ymz.git
-  cd ymz
-  cargo build --release
-
-  ```
-
-
-3. **(Опционально) Установка в систему:**
-  ```bash
-  sudo install -Dm755 target/release/ymz /usr/local/bin/ymz
-
-  ```
-
-
+3. **(Optional) Install system-wide:**
+   ```bash
+   sudo install -Dm755 target/release/ymz /usr/local/bin/ymz
+   ```
 
 ---
 
-### Настройка
+### Configuration
 
-Сохраните OAuth-токен Яндекс Музыки в конфигурационный файл и ограничьте права доступа:
+Save your Yandex Music OAuth token to the configuration file and restrict access permissions:
 
 ```bash
 mkdir -p ~/.config/ymz
-echo "ВАШ_ТОКЕН" > ~/.config/ymz/token
+echo "YOUR_TOKEN" > ~/.config/ymz/token
 chmod 600 ~/.config/ymz/token
-
 ```
 
-> Также поддерживается передача токена через переменную окружения `YM_TOKEN`.
+> Passing the token via the `YM_TOKEN` environment variable is also supported.
 
 ---
 
-### Автозапуск
+### Autostart
 
-#### Вариант 1: systemd user service (рекомендуется)
+#### Option 1: systemd user service (recommended)
 
-Создайте файл `~/.config/systemd/user/ymz.service`:
+Create `~/.config/systemd/user/ymz.service`:
 
 ```ini
 [Unit]
@@ -132,67 +124,62 @@ RestartSec=3
 
 [Install]
 WantedBy=default.target
-
 ```
 
-Активация и запуск:
+Enable and start the service:
 
 ```bash
 systemctl --user daemon-reload
 systemctl --user enable --now ymz.service
-
 ```
 
-#### Вариант 2: Запуск без systemd (Hyprland / Sway / AwesomeWM / i3)
+#### Option 2: Without systemd (Hyprland / Sway / AwesomeWM / i3)
 
-Просто добавьте вызов бинарника в конфиг оконного менеджера:
+Add the binary call to your window manager or compositor configuration:
 
 * **Hyprland** (`hyprland.conf`):
-```ini
-exec-once = ymz
-
-```
-
+  ```ini
+  exec-once = ymz
+  ```
 
 * **Sway** (`config`):
-```ini
-exec ymz
-
-```
-
+  ```ini
+  exec ymz
+  ```
 
 * **AwesomeWM** (`rc.lua`):
-```lua
-awful.spawn.with_shell("ymz")
+  ```lua
+  awful.spawn.with_shell("ymz")
+  ```
 
-```
-
-
+* **i3** (`config`):
+  ```ini
+  exec --no-startup-id ymz
+  ```
 
 ---
 
-### Управление
+### Controls & Usage
 
 ```bash
-# Плей / Пауза
+# Play / Pause toggle
 playerctl -p ymz play-pause
 
-# Следующий трек (с отправкой skip-статистики)
+# Next track (sends skip feedback)
 playerctl -p ymz next
 
-# Перемотка вперед/назад на 10 секунд
+# Seek forward / backward by 10 seconds
 playerctl -p ymz position 10+
 playerctl -p ymz position 10-
 
-# Перейти на конкретную секунду (например, 1:15)
+# Jump to a specific second (e.g. 1:15)
 playerctl -p ymz position 75
 
-# Текущие метаданные и статус
+# Display current metadata and playback status
 playerctl -p ymz metadata
-
 ```
 
-#### Интеграция с Waybar (`config.jsonc`):
+#### Waybar Integration (`config.jsonc`):
 
 ```jsonc
 "mpris": {
@@ -204,13 +191,10 @@ playerctl -p ymz metadata
         "paused": "⏸"
     }
 }
-
 ```
 
 ---
 
-### Лицензия
+### License
 
-Проект распространяется под лицензией [MIT](https://www.google.com/search?q=LICENSE&utm_source=gemini).
-
-
+This project is licensed under the [MIT License](LICENSE).
